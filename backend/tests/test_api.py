@@ -153,7 +153,8 @@ def test_gemini_translate_stt_tts_with_mocked_http(monkeypatch):
 
     monkeypatch.setattr(g, "post", fake_post)
     j = client.post("/api/translate", json={"text": "नमस्ते", "source": "hi", "target": "en"}).json()
-    assert j == {"text": "Hello", "provider": "gemini", "simulated": False, "matched": True}
+    assert {k: j[k] for k in ("text", "provider", "simulated", "matched")} == {"text": "Hello", "provider": "gemini", "simulated": False, "matched": True}
+    assert "misunderstanding" in j
     assert client.post("/api/stt", files={"audio": ("a.wav", b"1234", "audio/wav")}, data={"language": "hi"}).json() == {"text": "Hello"}
     r = client.post("/api/tts", json={"text": "hello", "language": "en"})
     assert r.status_code == 200 and r.headers["content-type"] == "audio/wav" and r.content[:4] == b"RIFF"
@@ -173,3 +174,119 @@ def test_gemini_bad_key_maps_to_clear_error(monkeypatch):
     monkeypatch.setattr(g, "post", fake_post)
     r = client.post("/api/translate", json={"text": "hi", "source": "en", "target": "hi"})
     assert r.status_code == 502 and r.json()["detail"]["code"] == "bad_api_key" and "GEMINI_API_KEY" in r.json()["detail"]["message"]
+
+
+def test_summarize_valid_mocked_http(monkeypatch):
+    import json
+    import httpx
+    from backend.app.providers import gemini as g
+
+    monkeypatch.setenv("GEMINI_API_KEY", "g-test")
+
+    summary_payload = {
+        "title": "BhashaBridge Project Sync",
+        "summary": "Krishna and Alice discussed testing translation accuracy. They decided to ship the prototype by Friday. Next meeting was scheduled for tomorrow.",
+        "key_points": ["Translation accuracy testing", "Ship date set to Friday"],
+        "action_items": [{"task": "Refactor CSS design system", "owner": "Krishna"}],
+        "decisions": ["Deploy prototype on Friday"],
+    }
+
+    async def fake_post(url, **kw):
+        assert kw["headers"]["x-goog-api-key"] == "g-test"
+        gemini_resp = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {"text": json.dumps(summary_payload)}
+                        ]
+                    }
+                }
+            ]
+        }
+        return httpx.Response(200, json=gemini_resp)
+
+    monkeypatch.setattr(g, "post", fake_post)
+
+    payload = {
+        "utterances": [
+            {"speaker": "Krishna", "text": "नमस्ते, क्या हम शुक्रवार तक शिप कर सकते हैं?", "lang": "hi"},
+            {"speaker": "Alice", "text": "Yes, we can deploy by Friday once tests pass.", "lang": "en"}
+        ],
+        "output_language": "en"
+    }
+    r = client.post("/api/summarize", json=payload)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["title"] == "BhashaBridge Project Sync"
+    assert "Krishna and Alice" in data["summary"]
+    assert len(data["key_points"]) == 2
+    assert data["action_items"] == [{"task": "Refactor CSS design system", "owner": "Krishna"}]
+    assert data["decisions"] == ["Deploy prototype on Friday"]
+
+
+def test_summarize_empty_transcript_returns_400():
+    r = client.post("/api/summarize", json={"utterances": [], "output_language": "en"})
+    assert r.status_code == 400
+    assert r.json()["detail"]["code"] == "empty_transcript"
+
+
+def test_summarize_too_long_returns_422():
+    # Individual utterance text > 1000 characters triggers validation error (422)
+    long_u = {"speaker": "User", "text": "a" * 1001, "lang": "en"}
+    r1 = client.post("/api/summarize", json={"utterances": [long_u], "output_language": "en"})
+    assert r1.status_code == 422
+
+    # Total characters exceeding 30,000 triggers 422 ProviderError
+    utterances = [{"speaker": f"User{i}", "text": "x" * 1000, "lang": "en"} for i in range(31)]
+    r2 = client.post("/api/summarize", json={"utterances": utterances, "output_language": "en"})
+    assert r2.status_code == 422
+    assert r2.json()["detail"]["code"] == "too_long"
+
+
+def test_summarize_bad_key_error(monkeypatch):
+    import httpx
+    from backend.app.providers import gemini as g
+
+    monkeypatch.setenv("GEMINI_API_KEY", "bad_key")
+
+    async def fake_post(url, **kw):
+        return httpx.Response(400, json={"error": {"status": "INVALID_ARGUMENT", "details": [{"reason": "API_KEY_INVALID"}]}})
+
+    monkeypatch.setattr(g, "post", fake_post)
+
+    payload = {
+        "utterances": [{"speaker": "User", "text": "Hello world", "lang": "en"}],
+        "output_language": "en"
+    }
+    r = client.post("/api/summarize", json=payload)
+    assert r.status_code == 502
+    assert r.json()["detail"]["code"] == "bad_api_key"
+
+
+def test_summarize_demo_mode_returns_400(monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("MISTRAL_API_KEY", "")
+
+    payload = {
+        "utterances": [{"speaker": "User", "text": "Hello world", "lang": "en"}],
+        "output_language": "en"
+    }
+    r = client.post("/api/summarize", json=payload)
+    assert r.status_code == 400
+    assert r.json()["detail"]["code"] == "missing_api_key"
+
+
+def test_misunderstanding_check_endpoint():
+    res = client.post("/api/misunderstanding/check", json={
+        "source_text": "I need 50 mg",
+        "translated_text": "Mujhe 15 mg chahiye",
+        "source_lang": "en",
+        "target_lang": "hi",
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert data["needs_confirmation"] is True
+    assert any(a["type"] == "number_mismatch" for a in data["alerts"])
+

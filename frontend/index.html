@@ -1,94 +1,475 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="auto">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BhashaBridge AI — multilingual voice call prototype</title>
-<link rel="stylesheet" href="css/styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="BhashaBridge AI is a real-time multilingual voice call application translating live speech between Hindi and English with instant AI call summaries.">
+  <meta name="theme-color" content="#0f172a">
+  <title>BhashaBridge AI — Real-time Multilingual Voice Call & AI Summary</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
+<a class="skip" href="#main">Skip to main content</a>
+
+<!-- Site Header -->
 <header class="top">
-  <div class="brand"><span class="logo" aria-hidden="true">भा</span> BhashaBridge AI <span class="tag">Prototype</span></div>
-  <div id="modeBanner" class="mode" role="status"></div>
+  <div class="top-inner">
+    <div class="brand" role="banner">
+      <div class="logo" aria-hidden="true">
+        <span>भा</span>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">BhashaBridge <span class="brand-accent">AI</span></span>
+        <span class="tag">Prototype</span>
+      </div>
+    </div>
+    
+    <div class="top-meta">
+      <div id="modeBanner" class="mode" role="status" aria-live="polite">Connecting to services…</div>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle light or dark theme" title="Toggle theme">
+        <svg class="theme-icon-sun" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="theme-icon-moon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </div>
 </header>
 
 <main id="main">
-<section id="view-home" class="view">
-  <h1>Speak your language.<br>Be heard in theirs.</h1>
-  <p class="lead">A two-person browser voice call. Each side's speech is transcribed, translated and spoken aloud in the other person's language. Expect a few seconds of delay — this is a sequential speech → text → translation → speech pipeline, not instant interpretation.</p>
-  <p class="langs"><strong>Languages:</strong> <span id="langChips"></span></p>
-  <button class="btn primary big" id="startBtn">Start calling</button>
-  <div class="card notice">
-    <h2>Privacy notice</h2>
-    <p>This app uses your microphone. Depending on server settings, your speech and its text are sent to third-party AI services (e.g. Google Gemini, OpenAI) for transcription, translation and speech. In Chrome, browser speech recognition also sends audio to Google. The server does not store audio or transcripts. Calls are not guaranteed private beyond standard WebRTC transport encryption; translated text passes through this server.</p>
-  </div>
-</section>
-
-<section id="view-lobby" class="view" hidden>
-  <h1>Set up your call</h1>
-  <div class="card form">
-    <label for="name">Your name</label>
-    <input id="name" maxlength="24" placeholder="e.g. Krishna" autocomplete="nickname">
-    <div class="row2">
-      <div><label for="spoken">I speak</label><select id="spoken"></select></div>
-      <div><label for="output">I want to hear</label><select id="output"></select></div>
-    </div>
-    <div class="actions">
-      <button class="btn primary" id="createBtn">Create call</button>
-    </div>
-    <hr>
-    <label for="roomInput">Or join with a room code</label>
-    <div class="join">
-      <input id="roomInput" maxlength="12" placeholder="ROOM CODE" autocapitalize="characters">
-      <button class="btn" id="joinBtn">Join call</button>
-    </div>
-    <p id="lobbyError" class="error" role="alert" hidden></p>
-  </div>
-  <p class="hint">Tip: use headphones if both people are in the same room, otherwise the speaker sound can leak into the microphone.</p>
-</section>
-
-<section id="view-call" class="view" hidden>
-  <div class="bar">
-    <div><span class="muted">Room</span> <strong id="roomCode" class="mono"></strong>
-      <button class="btn small" id="copyBtn">Copy invite link</button></div>
-    <div class="pills">
-      <span class="pill" id="connPill">Connecting…</span>
-      <span class="pill" id="timer" aria-label="Call duration">00:00</span>
-      <span class="pill state" id="pipePill" data-state="idle" role="status" aria-live="polite">Idle</span>
-    </div>
-  </div>
-  <p id="callError" class="error" role="alert" hidden></p>
-  <div class="grid">
-    <div class="col">
-      <div class="people">
-        <article class="card person" id="meCard"><h2>You</h2><p class="pname" id="meName"></p><p class="muted" id="meMic">Microphone: starting…</p>
-          <div class="meter" aria-hidden="true"><i id="meter"></i></div></article>
-        <article class="card person" id="peerCard"><h2>Participant</h2><p class="pname" id="peerName">Waiting for someone to join…</p><p class="muted" id="peerLang"></p></article>
+  <!-- 1. Home Screen -->
+  <section id="view-home" class="view" aria-labelledby="homeHeading">
+    <div class="hero">
+      <div class="badge-pill">
+        <span class="badge-dot"></span>
+        <span>Real-Time Voice Translation &bull; Hindi &bull; English</span>
       </div>
-      <div class="card controls">
+      <h1 id="homeHeading">Speak your language.<br><span class="gradient-text">Be heard in theirs.</span></h1>
+      <p class="lead">Connect on a natural two-person browser voice call. Each side's speech is automatically transcribed, translated, and spoken aloud in the other person's preferred language. Complete with instant AI call summaries.</p>
+      
+      <div class="hero-actions">
+        <button class="btn primary big" id="startBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>Start Calling</span>
+        </button>
+        <button class="btn secondary big" id="joinQuickBtn" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Join with Code</span>
+        </button>
+      </div>
+
+      <div class="lang-bar">
+        <span class="lang-label">Supported Languages:</span>
+        <div id="langChips" class="lang-chips"></div>
+      </div>
+    </div>
+
+    <!-- Features / Pipeline Overview -->
+    <div class="pipeline-grid">
+      <div class="card feat-card">
+        <div class="feat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </div>
+        <h3>1. Speech to Text</h3>
+        <p>Local microphone audio is transcribed into text using browser speech recognition or server AI (Gemini / OpenAI).</p>
+      </div>
+
+      <div class="card feat-card">
+        <div class="feat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <h3>2. Neural Translation</h3>
+        <p>Sentences are translated between Hindi and English seamlessly, preserving context and meaning.</p>
+      </div>
+
+      <div class="card feat-card">
+        <div class="feat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        </div>
+        <h3>3. Voice Synthesis</h3>
+        <p>The translated message is spoken aloud to the participant with natural text-to-speech audio.</p>
+      </div>
+
+      <div class="card feat-card">
+        <div class="feat-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <h3>4. AI Call Summary</h3>
+        <p>Get structured summaries, key points, decisions, and action items instantly after or during your call.</p>
+      </div>
+    </div>
+
+    <!-- Privacy Notice Card -->
+    <div class="card notice">
+      <div class="notice-header">
+        <svg class="notice-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <h2>Privacy &amp; Data Notice</h2>
+      </div>
+      <p>This app requires access to your microphone. Speech and text are processed for transcription, translation, and speech synthesis. The server does not store audio, transcripts, or call records. Calls use standard WebRTC transport encryption. Your call transcript remains private in your browser session.</p>
+    </div>
+  </section>
+
+  <!-- 2. Lobby Screen -->
+  <section id="view-lobby" class="view" aria-labelledby="lobbyHeading" hidden>
+    <div class="lobby-wrap">
+      <div class="lobby-header">
+        <button class="btn-ghost back-btn" id="backToHomeBtn" type="button" aria-label="Back to home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span>Home</span>
+        </button>
+        <h1 id="lobbyHeading">Set up your call</h1>
+        <p class="muted">Choose your language preferences and create a room or join a friend.</p>
+      </div>
+
+      <div class="card form lobby-card">
+        <div class="form-group">
+          <label for="name">Your Name</label>
+          <div class="input-with-icon">
+            <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input id="name" maxlength="24" placeholder="e.g. Krishna" autocomplete="nickname">
+          </div>
+        </div>
+
         <div class="row2">
-          <div><label for="spoken2">I speak</label><select id="spoken2"></select></div>
-          <div><label for="output2">I want to hear</label><select id="output2"></select></div>
+          <div class="form-group">
+            <label for="spoken">I Speak</label>
+            <div class="select-wrapper">
+              <select id="spoken"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="output">I Want to Hear</label>
+            <div class="select-wrapper">
+              <select id="output"></select>
+            </div>
+          </div>
         </div>
-        <label for="origVol">Original voice volume while translating (0 = hear only the translation)</label>
-        <input type="range" id="origVol" min="0" max="100" value="10">
+
         <div class="actions">
-          <button class="btn" id="muteBtn" aria-pressed="false">Mute microphone</button>
-          <button class="btn danger" id="leaveBtn">Leave call</button>
+          <button class="btn primary w-full" id="createBtn" type="button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <span>Create New Call</span>
+          </button>
+        </div>
+
+        <div class="divider">
+          <span>OR JOIN EXISTING ROOM</span>
+        </div>
+
+        <div class="form-group">
+          <label for="roomInput">Enter Room Code</label>
+          <div class="join">
+            <input id="roomInput" maxlength="12" placeholder="ROOM CODE" autocapitalize="characters" spellcheck="false">
+            <button class="btn secondary" id="joinBtn" type="button">Join Call</button>
+          </div>
+        </div>
+
+        <p id="lobbyError" class="error" role="alert" hidden></p>
+      </div>
+
+      <div class="hint-card">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        <p class="hint"><strong>Pro Tip:</strong> Use headphones if both people are in the same room to prevent speaker audio feedback into the microphone.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Call Screen -->
+  <section id="view-call" class="view" aria-labelledby="callHeading" hidden>
+    <!-- Screen Reader Heading -->
+    <h1 id="callHeading" class="visually-hidden">Live Voice Call</h1>
+
+    <!-- Top Bar -->
+    <div class="bar call-topbar">
+      <div class="room-info">
+        <span class="room-tag">Room</span>
+        <strong id="roomCode" class="mono">------</strong>
+        <button class="btn small icon-btn" id="copyBtn" type="button" title="Copy room invite link">
+          <svg class="copy-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span id="copyBtnText">Copy Link</span>
+        </button>
+      </div>
+
+      <div class="pills call-pills">
+        <span class="pill" id="connPill">Connecting…</span>
+        <span class="pill timer-pill" id="timer" aria-label="Call duration">00:00</span>
+        <span class="pill state" id="pipePill" data-state="idle" role="status" aria-live="polite">Idle</span>
+      </div>
+
+      <div class="topbar-actions">
+        <button class="btn small primary-subtle summary-top-btn" id="headerSummaryBtn" type="button" title="Generate AI Call Summary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span>Summary</span>
+        </button>
+      </div>
+    </div>
+
+    <p id="callError" class="error" role="alert" hidden></p>
+
+    <!-- Main Call Grid -->
+    <div class="grid call-grid">
+      <!-- Left Column: Participants + Controls -->
+      <div class="col call-left-col">
+        <div class="people">
+          <!-- Local Participant -->
+          <article class="card person" id="meCard">
+            <div class="person-top">
+              <div class="avatar-wrap">
+                <div class="avatar" id="meAvatar" aria-hidden="true">YOU</div>
+                <div class="speaking-pulse" aria-hidden="true"></div>
+              </div>
+              <div class="person-meta">
+                <div class="person-role">Local Participant</div>
+                <h2 class="pname" id="meName">You</h2>
+                <p class="muted person-status" id="meMic">Microphone: starting…</p>
+              </div>
+            </div>
+            <div class="meter-container" aria-label="Microphone volume level">
+              <span class="meter-label">Mic level</span>
+              <div class="meter" aria-hidden="true"><i id="meter"></i></div>
+            </div>
+          </article>
+
+          <!-- Remote Participant -->
+          <article class="card person" id="peerCard">
+            <div class="person-top">
+              <div class="avatar-wrap">
+                <div class="avatar peer-avatar" id="peerAvatar" aria-hidden="true">?</div>
+                <div class="speaking-pulse peer-pulse" aria-hidden="true"></div>
+              </div>
+              <div class="person-meta">
+                <div class="person-role">Remote Participant</div>
+                <h2 class="pname" id="peerName">Waiting for someone to join…</h2>
+                <p class="muted person-status" id="peerLang">Share your room link with someone</p>
+              </div>
+            </div>
+            <div class="peer-wave-container" aria-hidden="true">
+              <div class="wave-bars">
+                <span></span><span></span><span></span><span></span><span></span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <!-- In-Call Settings Panel -->
+        <div class="card in-call-settings">
+          <div class="settings-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Live Audio &amp; Language Settings</span>
+          </div>
+
+          <div class="row2">
+            <div class="form-group">
+              <label for="spoken2">I Speak</label>
+              <div class="select-wrapper">
+                <select id="spoken2"></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="output2">I Want to Hear</label>
+              <div class="select-wrapper">
+                <select id="output2"></select>
+              </div>
+            </div>
+          </div>
+
+          <div class="vol-group">
+            <div class="vol-label-row">
+              <label for="origVol">Original Voice Volume While Translating</label>
+              <span class="vol-val" id="volVal">10%</span>
+            </div>
+            <div class="slider-wrap">
+              <span class="slider-icon" aria-hidden="true">🔈</span>
+              <input type="range" id="origVol" min="0" max="100" value="10" aria-label="Original voice volume">
+              <span class="slider-icon" aria-hidden="true">🔊</span>
+            </div>
+            <p class="muted vol-hint">Set to 0% to hear only the translated voice. 100% plays the full original voice.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Chat-Bubble Transcript -->
+      <div class="card transcript-wrap">
+        <div class="transcript-header">
+          <div class="transcript-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <h2>Live Transcript</h2>
+          </div>
+          <span class="transcript-badge">Auto-translated</span>
+        </div>
+
+        <ol id="transcript" class="transcript" aria-live="polite">
+          <li class="empty">Conversation will appear here once both people are connected.</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Bottom Floating Control Bar -->
+    <nav class="controls-bar-floating" aria-label="Call controls">
+      <div class="controls-bar-inner">
+        <!-- Mute Button -->
+        <button class="btn ctrl-btn" id="muteBtn" type="button" aria-pressed="false" title="Mute or unmute microphone">
+          <svg class="mic-on-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <svg class="mic-off-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <span class="ctrl-label">Mute</span>
+        </button>
+
+        <!-- Summary Button -->
+        <button class="btn ctrl-btn summary-btn" id="summaryBtn" type="button" title="View or generate AI Call Summary">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span class="ctrl-label">Summary</span>
+        </button>
+
+        <!-- Leave Call Button -->
+        <button class="btn ctrl-btn danger" id="leaveBtn" type="button" title="Leave voice call">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+          <span class="ctrl-label">Leave</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Hidden audio playback elements -->
+    <audio id="remoteAudio" autoplay playsinline></audio>
+    <audio id="ttsAudio" playsinline></audio>
+  </section>
+</main>
+
+<!-- Call Summary Modal -->
+<div class="modal-backdrop" id="summaryModal" role="dialog" aria-modal="true" aria-labelledby="summaryModalTitle" hidden>
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title-wrap">
+        <div class="sparkle-badge" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        <h2 id="summaryModalTitle">AI Call Summary</h2>
+      </div>
+
+      <div class="modal-header-actions">
+        <label for="summaryLang" class="visually-hidden">Summary Output Language</label>
+        <select id="summaryLang" class="summary-lang-select" title="Summary language">
+          <option value="en">English</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+        </select>
+        <button class="modal-close" id="closeSummaryBtn" type="button" aria-label="Close summary modal">&times;</button>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Loading Skeleton State -->
+      <div id="summaryLoading" class="summary-loading" hidden>
+        <div class="skeleton-shimmer">
+          <div class="skeleton-line title"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line"></div>
+          <div class="skeleton-line short"></div>
+          <div class="skeleton-line list-item"></div>
+          <div class="skeleton-line list-item"></div>
+          <div class="skeleton-line list-item"></div>
+        </div>
+        <p class="loading-text">Analyzing transcript &amp; generating AI summary…</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="summaryEmpty" class="summary-empty" hidden>
+        <div class="empty-icon" aria-hidden="true">📝</div>
+        <h3>No Conversation Recorded Yet</h3>
+        <p class="muted">Start speaking in the call to create transcript entries. Once speech is recorded, you can generate a full structured summary.</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="summaryError" class="summary-error error" role="alert" hidden>
+        <p id="summaryErrorMsg">Could not generate summary.</p>
+        <button class="btn small" id="retrySummaryBtn" type="button">Retry</button>
+      </div>
+
+      <!-- Content Display -->
+      <div id="summaryContent" class="summary-content">
+        <div class="summary-section">
+          <h3 class="summary-heading" id="summaryTitle">Meeting Summary</h3>
+          <p class="summary-paragraph" id="summaryText"></p>
+        </div>
+
+        <div class="summary-section" id="keyPointsSec">
+          <h4 class="section-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Key Discussion Points
+          </h4>
+          <ul id="summaryKeyPoints" class="bullet-list"></ul>
+        </div>
+
+        <div class="summary-section" id="actionItemsSec">
+          <h4 class="section-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="12" x2="15" y2="12"/></svg>
+            Action Items
+          </h4>
+          <ul id="summaryActionItems" class="action-list"></ul>
+        </div>
+
+        <div class="summary-section" id="decisionsSec">
+          <h4 class="section-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            Decisions Made
+          </h4>
+          <ul id="summaryDecisions" class="bullet-list"></ul>
         </div>
       </div>
     </div>
-    <div class="card transcript-wrap">
-      <h2>Live transcript</h2>
-      <ol id="transcript" class="transcript" aria-live="polite"><li class="empty">Conversation will appear here once both people are connected.</li></ol>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <div class="privacy-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span>Summary AI se banta hai, transcript sirf aapke browser me rehta hai, server save nahi karta.</span>
+      </div>
+
+      <div class="modal-btn-group">
+        <button class="btn icon-btn" id="copySummaryBtn" type="button" title="Copy formatted summary to clipboard">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span>Copy</span>
+        </button>
+        <button class="btn icon-btn" id="downloadSummaryMdBtn" type="button" title="Download summary as Markdown">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>.md</span>
+        </button>
+        <button class="btn icon-btn" id="downloadSummaryTxtBtn" type="button" title="Download summary as Text">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>.txt</span>
+        </button>
+        <button class="btn primary icon-btn" id="regenerateSummaryBtn" type="button">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+          <span>Regenerate</span>
+        </button>
+      </div>
     </div>
   </div>
-  <audio id="remoteAudio" autoplay playsinline></audio>
-  <audio id="ttsAudio" playsinline></audio>
-</section>
-</main>
-<div id="toast" class="toast" role="status" hidden></div>
+</div>
+
+<!-- Leave Call Confirmation & Summary Dialog -->
+<div class="modal-backdrop" id="leaveConfirmModal" role="dialog" aria-modal="true" aria-labelledby="leaveModalTitle" hidden>
+  <div class="modal-box modal-sm">
+    <div class="modal-header">
+      <h2 id="leaveModalTitle">Leave Call?</h2>
+      <button class="modal-close" id="cancelLeaveXBtn" type="button" aria-label="Cancel">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Would you like to generate an <strong>AI Call Summary</strong> before leaving?</p>
+      <p class="muted hint-text">Once you leave without summarizing, the transcript stored in your browser session will be cleared.</p>
+    </div>
+    <div class="modal-footer">
+      <div class="leave-btn-stack">
+        <button class="btn primary w-full" id="leaveAndSummarizeBtn" type="button">Generate Summary &amp; Leave</button>
+        <button class="btn danger w-full" id="confirmLeaveBtn" type="button">Leave Without Summary</button>
+        <button class="btn secondary w-full" id="cancelLeaveBtn" type="button">Stay in Call</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

@@ -39,9 +39,23 @@
 
 ## Problem Statement
 
+<<<<<<< HEAD
 Language barriers can make voice conversations difficult when two people do not speak the same language. Traditional translation tools often require users to stop a conversation, open another app, and manually enter or speak each sentence. This interrupts the natural flow of communication.
 
 ## Our Solution
+=======
+- **Frontend:** plain HTML/CSS/JS (ES modules), koi build step nahi. Modern responsive UI, chat-bubble live transcript, dark/light theme, floating control bar. FastAPI hi isse serve karta hai, to **sirf ek server** chalana hai (`localhost:8000`).
+- **Backend:** FastAPI — WebSocket signaling (`/ws/{room}`), aur REST APIs: `/api/config`, `/api/rooms`, `/api/translate`, `/api/stt`, `/api/tts`, `/api/summarize`.
+- **Call:** WebRTC (browser-to-browser audio). Signaling sirf offer/answer/ICE aur chhote JSON messages relay karti hai.
+- **Providers (configurable, `.env` se):**
+
+| Kaam | Keys ke bina (free) | Key ke saath |
+|---|---|---|
+| Speech-to-text | Browser Web Speech API (sirf Chrome/Edge) | **Google Gemini**, OpenAI transcription, ya Mistral Voxtral (`STT_PROVIDER=mistral`) |
+| Translation | **DEMO phrasebook (SIMULATED, AI nahi)** — sirf kuch fixed phrases | **Google Gemini**, Mistral, OpenAI ya Google Translate |
+| Text-to-speech | Browser `speechSynthesis` (device me Hindi voice honi chahiye) | **Google Gemini TTS**, ya OpenAI TTS (Mistral TTS abhi implement nahi hai) |
+| Call Summary | ❌ Unavailable (requires AI key) | **Google Gemini** (`GEMINI_SUMMARY_MODEL`), OpenAI, ya Mistral |
+>>>>>>> 877e68f (add new feature)
 
 **BhashaBridge AI** is a multilingual voice-call prototype designed to make cross-language conversations easier. Two users join a browser-based call. Each person can choose the language they speak and the language in which they want to hear the other participant.
 
@@ -113,6 +127,7 @@ No Node.js, `package.json`, Vite, or separate frontend development server is req
 ```text
 bhashabridge-ai/
 ├── backend/
+<<<<<<< HEAD
 │   └── app/
 │       ├── main.py             # FastAPI application, REST and WebSocket routes
 │       ├── config.py           # Environment and provider configuration
@@ -124,6 +139,16 @@ bhashabridge-ai/
 │           ├── translate.py    # Translation providers
 │           ├── tts.py          # Text-to-speech providers
 │           └── errors.py       # Provider error handling
+=======
+│   ├── app/
+│   │   ├── main.py          # FastAPI app, REST + WebSocket routes
+│   │   ├── config.py        # .env settings, provider selection
+│   │   ├── languages.py     # supported languages (yahin nayi language add karo)
+│   │   ├── signaling.py     # 2-person room manager
+│   │   ├── ratelimit.py     # simple per-IP rate limit
+│   │   └── providers/       # stt.py, translate.py, tts.py, summarize.py, errors.py
+│   └── tests/               # pytest tests
+>>>>>>> 877e68f (add new feature)
 ├── frontend/
 │   ├── index.html
 │   ├── css/
@@ -242,15 +267,77 @@ uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 
 Open the following URL in Chrome or Edge:
 
+<<<<<<< HEAD
 ```text
 http://localhost:8000
+=======
+> Frontend alag server pe nahi chalta, FastAPI hi serve karta hai. Isliye "dono servers" ki jagah sirf ye ek command hai.
+
+---
+
+## 4. API keys configure karna (`.env`)
+
+Keys **sirf backend** me rehti hain, frontend code me kabhi nahi aati. `.env` ko git me commit mat karna (`.gitignore` me already hai).
+
+| Variable | Kab zaroori hai |
+|---|---|
+| `GEMINI_API_KEY` | **Gemini** ke liye (aistudio.google.com/apikey se key). Key set ho to `auto` me STT + translation + TTS teeno Gemini se hote hain, aur Call Summary bhi Gemini se banti hai |
+| `GEMINI_STT_MODEL` / `GEMINI_TRANSLATE_MODEL` / `GEMINI_TTS_MODEL` / `GEMINI_TTS_VOICE` / `GEMINI_SUMMARY_MODEL` | Optional. Default: `gemini-3.5-flash` / `gemini-3.5-flash-lite` / `gemini-2.5-flash-preview-tts` / `Kore` / `gemini-3.5-flash`. Model naam Google badalta rehta hai, to `.env` se badal sakte ho |
+| `MISTRAL_API_KEY` | Translation ke liye Mistral (console.mistral.ai se key), ya `STT_PROVIDER=mistral` |
+| `OPENAI_API_KEY` | Jab STT / translation / TTS me se koi `openai` ho (ya `auto` aur key set ho) |
+| `GOOGLE_TRANSLATE_API_KEY` | Sirf jab `TRANSLATE_PROVIDER=google` ho. Ye plain API key hai (Cloud Translation v2). Service-account JSON support nahi hai |
+| `STT_PROVIDER` / `TRANSLATE_PROVIDER` / `TTS_PROVIDER` | Optional. `auto` (default), warna explicitly choose karo |
+| `STUN_SERVER_URL` | Default Google ka public STUN |
+| `TURN_SERVER_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL` | Optional, strict NAT/firewall ke liye |
+
+**`auto` ka matlab:**
+- Gemini key ho to STT, translation aur TTS teeno Gemini (sabse pehle check hota hai). Neeche wale rules tab lagte hain jab Gemini key na ho.
+- STT: OpenAI key ho to OpenAI, warna browser. Mistral STT sirf tab chalta hai jab aap `STT_PROVIDER=mistral` likho.
+- Translation: Mistral key > OpenAI key > Google key > demo phrasebook.
+- TTS: OpenAI key ho to OpenAI, warna browser.
+
+### Gemini setup (recommended)
+
+```
+GEMINI_API_KEY=AIza...
+```
+Bas itna kaafi hai. Server restart karo; UI ke upar banner me `speech-to-text: gemini, translation: gemini, text-to-speech: gemini` dikhna chahiye. Mic audio browser me 16 kHz WAV me convert hoke `/api/stt` ko jaata hai (Gemini webm/mp4 accept nahi karta). Gemini TTS ka audio WAV hota hai. Ye sab maine mocked HTTP se test kiya hai, live Gemini call aur real mic test aapko karna hoga.
+
+### Rate limit / quota issue ho to (recommended setup)
+OpenAI ka 429 ya quota error aa raha ho to ye `.env` use karo:
+
+```
+STT_PROVIDER=browser
+TRANSLATE_PROVIDER=mistral
+TTS_PROVIDER=browser
+MISTRAL_API_KEY=...
+```
+Isme speech recognition aur bolna browser ke free features se hota hai (Chrome/Edge), aur sirf translation Mistral se hota hai. App 429/503 pe ek baar khud retry karta hai, par free plans ki limits phir bhi lag sakti hain.
+
+Mistral Voxtral STT (`STT_PROVIDER=mistral`) maine live test nahi kiya. Browser se webm audio jaata hai, agar format error aaye to `STT_PROVIDER=browser` pe wapas jao.
+
+Example (poora OpenAI):
+
+```
+OPENAI_API_KEY=sk-...
+>>>>>>> 877e68f (add new feature)
 ```
 
 FastAPI serves the frontend and API, so only one local server is needed.
 
 ## Testing a Call
 
+<<<<<<< HEAD
 ### Test with two browser tabs
+=======
+| Feature | Bina key | Key ke saath |
+|---|---|---|
+| Room create/join, WebRTC call, mute, timer | ✅ | ✅ |
+| Speech recognition | ✅ Chrome/Edge (Google ki online service use hoti hai) | ✅ Google Gemini / OpenAI |
+| Translation | ⚠️ Sirf SIMULATED phrasebook (hello, thank you, etc.) | ✅ Real AI translation (Gemini / Mistral / OpenAI) |
+| Spoken translation | ✅ agar device me us language ki voice installed ho | ✅ Google Gemini TTS / OpenAI TTS |
+| Call Summary | ❌ Unavailable in demo mode | ✅ Google Gemini (`GEMINI_SUMMARY_MODEL`), OpenAI, Mistral |
+>>>>>>> 877e68f (add new feature)
 
 1. Open `http://localhost:8000` in the first tab.
 2. Enter a display name, set **I speak** to Hindi, and set **I want to hear** to English.
@@ -263,7 +350,77 @@ FastAPI serves the frontend and API, so only one local server is needed.
 
 Try phrases such as “नमस्ते”, “धन्यवाद”, “आप कैसे हैं”, “hello”, “thank you”, and “how are you”. In demo mode, only phrases present in the phrasebook will be translated.
 
+<<<<<<< HEAD
 **Use headphones** to reduce acoustic echo when testing with two tabs on the same computer.
+=======
+## 5. Call Summary Feature (`POST /api/summarize`)
+
+Call ke dauran dono participants ki conversation ka live transcript browser ki memory me jama hota rehta hai. Call screen par **"Summary"** button dabane par ya **"Leave call"** karne par AI se call summary generate ki ja sakti hai.
+
+### Backend Endpoint Details
+- **Route:** `POST /api/summarize`
+- **Rate Limit:** Protected by `RATE_LIMIT_PER_MIN` (default 60 req/min per IP)
+- **Request Body:**
+  ```json
+  {
+    "utterances": [
+      {
+        "speaker": "Krishna",
+        "text": "नमस्ते, क्या हम शुक्रवार तक नया फीचर रिलीज कर सकते हैं?",
+        "lang": "hi"
+      },
+      {
+        "speaker": "John",
+        "text": "Yes, I will finalize the backend APIs by Wednesday.",
+        "lang": "en"
+      }
+    ],
+    "output_language": "en"
+  }
+  ```
+- **Validation:**
+  - `max 200 utterances`
+  - Har utterance text: 1 se 1000 characters
+  - Total transcript characters: max 30,000 characters (exceed karne par 422 error)
+  - `output_language`: supported languages (`"en"` ya `"hi"`)
+  - Khaali transcript bhejne par `400 Bad Request` (`empty_transcript`)
+  - AI keys na hone par `400 Bad Request` (`missing_api_key`)
+- **Strict JSON Response:**
+  ```json
+  {
+    "title": "Feature Release Planning",
+    "summary": "Krishna and John discussed releasing the new feature by Friday. John committed to finalizing backend APIs by Wednesday.",
+    "key_points": [
+      "Target release date is Friday",
+      "Backend APIs deadline is Wednesday"
+    ],
+    "action_items": [
+      {
+        "task": "Finalize backend APIs",
+        "owner": "John"
+      }
+    ],
+    "decisions": [
+      "Release scheduled for Friday"
+    ]
+  }
+  ```
+- **Privacy & Security:**
+  - Server audio, transcript text ya summary ko kabhi disk/database me **store ya log nahi karta**.
+  - System prompt transcript ko strictly raw data treat karta hai aur prompt injection instructions ko follow nahi karta.
+  - Transcript browser memory me rehta hai aur leave karne par browser se wipe ho jata hai.
+
+### Frontend Capabilities
+- **Summary Modal:** Live summary view jisme Title, Summary paragraph, Key points, Interactive checkboxes ke saath Action items, aur Decisions aate hain.
+- **Language Switcher:** English ya Hindi me summary generate karne ka dropdown selector.
+- **Export Options:** **Copy** (Markdown formatted), **Download as .md**, aur **Download as .txt**.
+- **Regenerate:** Ek click me summary ko dobara naye options ya output language ke saath refresh karein.
+- **Leave Guard:** Leave button dabane par dialog poochta hai: *"Generate Summary & Leave"* ya *"Leave Without Summary"*.
+
+---
+
+## 6. Call test kaise karein
+>>>>>>> 877e68f (add new feature)
 
 ### Test with two devices
 
@@ -271,16 +428,29 @@ Microphone access generally requires a secure context: `localhost` or HTTPS. To 
 
 ## Running Tests
 
+<<<<<<< HEAD
 With the virtual environment activated:
+=======
+Phone pe server accessible rakhne ke liye `--host 0.0.0.0` se start karo aur Windows Firewall me port 8000 allow karo.
+
+---
+
+## 7. Tests chalana
+>>>>>>> 877e68f (add new feature)
 
 ```powershell
 pytest
 ```
 
+<<<<<<< HEAD
 The automated tests cover implemented backend areas such as health/configuration, provider selection, demo translation, validation, room management, and rate limiting. Automated tests do **not** replace manual testing of live provider APIs, real microphones, or a two-browser WebRTC call.
+=======
+Ye health, config/provider selection (OpenAI/Mistral), demo translation, validation, room manager (2 users, teesra reject, galat message drop), summarize endpoints, aur rate limiter test karta hai. Live OpenAI/Google calls aur real microphone/two-browser call **automated tests me cover nahi hain**, unhe upar ke steps se manually test karna hoga.
+>>>>>>> 877e68f (add new feature)
 
 ## Limitations
 
+<<<<<<< HEAD
 - **Prototype only:** Not designed or audited for production use.
 - **Latency:** The pipeline runs sequentially (STT → translation → TTS), so translated speech can arrive several seconds after a sentence. Some modes also wait for a pause in speech.
 - **Translation quality:** Translations can be inaccurate, especially with accents, background noise, names, or context-dependent language.
@@ -291,6 +461,9 @@ The automated tests cover implemented backend areas such as health/configuration
 - **Network traversal:** Some networks and firewalls require a TURN server; STUN alone may not be enough.
 - **Testing status:** Live API integrations and the complete real-microphone/WebRTC experience require manual validation in the intended environment.
 - **No zero-latency claim:** Processing and network delays are expected.
+=======
+## 8. Troubleshooting
+>>>>>>> 877e68f (add new feature)
 
 ## Privacy and Security
 
@@ -356,7 +529,11 @@ Thanks to the event organizers, mentors, testers, and everyone who provided feed
 
 ---
 
+<<<<<<< HEAD
 ## Future Improvements
+=======
+## 9. Nayi language kaise add karein
+>>>>>>> 877e68f (add new feature)
 
 - Reduce latency through streaming or more incremental speech processing.
 - Improve transcription and translation quality in noisy environments.
@@ -367,4 +544,20 @@ Thanks to the event organizers, mentors, testers, and everyone who provided feed
 
 ---
 
+<<<<<<< HEAD
 **Disclaimer:** BhashaBridge AI is a prototype for demonstration and learning. Provider availability, supported models, pricing, and browser behavior may change. Verify the current configuration and test the complete call flow before presenting the project as fully functional.
+=======
+## 10. Privacy aur security (sach-sach)
+
+- Mic access zaroori hai. Provider ke hisaab se speech/text third parties (OpenAI, Google, Chrome ki speech service) ko jaata hai.
+- Server audio ya transcript **store nahi** karta, aur logs me sirf metadata (language, bytes, characters) jaata hai, text nahi, aur keys kabhi nahi.
+- WebRTC audio ko browser DTLS-SRTP se encrypt karta hai. Par translated text signaling server se guzarta hai, isliye ise **end-to-end private nahi** maanna.
+- Basic validation, message size limits aur per-IP rate limit hai. Authentication nahi hai, room code jisko pata ho wo join kar sakta hai.
+
+## 11. Known limitations
+- Latency: har utterance ke baad kuch seconds. OpenAI mode me VAD silence (~0.9 s) ka wait karta hai.
+- Sirf 2 participants per room.
+- Browser STT sirf Chrome/Edge me, aur accuracy accent/noise pe depend karti hai.
+- Real microphone aur WebRTC flow automated tests me cover nahi hote (sandbox me browser/mic nahi hota). Backend tests pass hue hain, manual testing browser me karni hogi.
+
+>>>>>>> 877e68f (add new feature)

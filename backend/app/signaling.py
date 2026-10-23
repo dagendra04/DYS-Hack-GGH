@@ -6,7 +6,7 @@ import secrets
 log = logging.getLogger("bhashabridge")
 
 ROOM_RE = re.compile(r"^[A-Z0-9]{4,12}$")
-ALLOWED = {"offer", "answer", "ice", "profile", "utterance"}
+ALLOWED = {"offer", "answer", "ice", "profile", "utterance", "translation_warning"}
 MAX_MSG = 20_000
 
 
@@ -39,6 +39,16 @@ class RoomManager:
             for k in ("original", "translated"):
                 if not isinstance(msg.get(k), str) or len(msg[k]) > 1000:
                     return
+            orig = msg.get("original", "").strip()
+            trans = msg.get("translated", "").strip()
+            if orig and trans and "misunderstanding" not in msg:
+                try:
+                    from .providers.misunderstanding import detect_misunderstanding
+                    msg["misunderstanding"] = detect_misunderstanding(
+                        orig, trans, msg.get("source", "hi"), msg.get("target", "en")
+                    )
+                except Exception as e:
+                    log.warning("detector error in relay: %s", type(e).__name__)
         for other_id, ws in list(self.rooms.get(code, {}).items()):
             if other_id != pid:
                 await self._safe(ws, {**msg, "from": pid})

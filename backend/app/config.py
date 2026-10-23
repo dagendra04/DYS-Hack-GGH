@@ -24,6 +24,7 @@ class Settings:
     gemini_translate_model: str
     gemini_tts_model: str
     gemini_tts_voice: str
+    gemini_summary_model: str
     mistral_stt_model: str
     mistral_translate_model: str
     stt_pref: str
@@ -111,6 +112,7 @@ def get_settings() -> Settings:
         gemini_translate_model=_get("GEMINI_TRANSLATE_MODEL", "gemini-3.5-flash-lite"),
         gemini_tts_model=_get("GEMINI_TTS_MODEL", "gemini-2.5-flash-preview-tts"),
         gemini_tts_voice=_get("GEMINI_TTS_VOICE", "Kore"),
+        gemini_summary_model=_get("GEMINI_SUMMARY_MODEL", "gemini-3.5-flash"),
         mistral_stt_model=_get("MISTRAL_STT_MODEL", "voxtral-mini-latest"),
         mistral_translate_model=_get("MISTRAL_TRANSLATE_MODEL", "mistral-small-latest"),
         stt_pref=_get("STT_PROVIDER", "auto").lower(),

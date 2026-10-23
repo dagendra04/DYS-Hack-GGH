@@ -63,6 +63,7 @@ export class CallSession {
         break;
       case 'profile': this.h.onPeerProfile(m.profile); break;
       case 'utterance': this.h.onUtterance(m); break;
+      case 'translation_warning': (this.h.onTranslationWarning && this.h.onTranslationWarning(m)); break;
       case 'room_full': case 'error': this.h.onError(m.message || 'Server error'); break;
     }
   }

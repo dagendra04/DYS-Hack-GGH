@@ -34,7 +34,7 @@ async function toWav(blob) {
     w(36, 'data'); v.setUint32(40, pcm.length * 2, true);
     pcm.forEach((x, i) => v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, x)) * 0x7fff, true));
     return new Blob([v], { type: 'audio/wav' });
-  } finally { ctx.close().catch(() => {}); }
+  } finally { ctx.close().catch(() => { }); }
 }
 export const stt = async (blob, language) => {
   let file = blob, ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
@@ -45,3 +45,14 @@ export const stt = async (blob, language) => {
   return (await req('/api/stt', { method: 'POST', body: f })).json();
 };
 export const tts = async (text, language) => (await req('/api/tts', json({ text, language }))).blob();
+export const summarize = async (utterances, outputLanguage = 'en') =>
+  (await req('/api/summarize', json({ utterances, output_language: outputLanguage }))).json();
+
+export const checkMisunderstanding = async (sourceText, translatedText, sourceLang, targetLang) =>
+  (await req('/api/misunderstanding/check', json({
+    source_text: sourceText,
+    translated_text: translatedText,
+    source_lang: sourceLang,
+    target_lang: targetLang,
+  }))).json();
+

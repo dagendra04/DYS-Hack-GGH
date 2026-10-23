@@ -12,8 +12,9 @@ from pydantic import BaseModel, Field
 
 from .config import get_settings
 from .languages import is_supported, language_list
-from .providers import stt, translate, tts
+from .providers import stt, summarize, translate, tts
 from .providers.errors import ProviderError
+from .providers.misunderstanding import detect_misunderstanding
 from .ratelimit import limiter
 from .signaling import MAX_MSG, ROOM_RE, rooms
 
@@ -46,6 +47,24 @@ class TranslateIn(BaseModel):
 class TTSIn(BaseModel):
     text: str = Field(min_length=1, max_length=1000)
     language: str
+
+
+class UtteranceIn(BaseModel):
+    speaker: str = Field(min_length=1, max_length=100)
+    text: str = Field(min_length=1, max_length=1000)
+    lang: str = Field(default="en", max_length=10)
+
+
+class SummarizeIn(BaseModel):
+    utterances: list[UtteranceIn] = Field(default_factory=list, max_length=200)
+    output_language: str = Field(default="en")
+
+
+class MisunderstandingCheckIn(BaseModel):
+    source_text: str = Field(default="", max_length=2000)
+    translated_text: str = Field(default="", max_length=2000)
+    source_lang: str = Field(default="hi")
+    target_lang: str = Field(default="en")
 
 
 def _check_lang(*codes):
@@ -83,7 +102,18 @@ async def api_translate(body: TranslateIn):
     _check_lang(body.source, body.target)
     result = await translate.translate(body.text.strip(), body.source, body.target)
     log.info("translate %s->%s provider=%s chars=%d", body.source, body.target, result["provider"], len(body.text))
+    try:
+        check = detect_misunderstanding(body.text.strip(), result.get("text", ""), body.source, body.target)
+        result["misunderstanding"] = check
+    except Exception as e:
+        log.warning("misunderstanding detector error: %s", type(e).__name__)
+        result["misunderstanding"] = {"needs_confirmation": False, "alerts": []}
     return result
+
+
+@app.post("/api/misunderstanding/check", dependencies=[Depends(rate_limit)])
+async def api_misunderstanding_check(body: MisunderstandingCheckIn):
+    return detect_misunderstanding(body.source_text, body.translated_text, body.source_lang, body.target_lang)
 
 
 @app.post("/api/stt", dependencies=[Depends(rate_limit)])
@@ -103,6 +133,19 @@ async def api_tts(body: TTSIn):
     audio, media_type = await tts.synthesize(body.text.strip())
     log.info("tts lang=%s chars=%d", body.language, len(body.text))
     return Response(content=audio, media_type=media_type)
+
+
+@app.post("/api/summarize", dependencies=[Depends(rate_limit)])
+async def api_summarize(body: SummarizeIn):
+    if not body.utterances:
+        raise ProviderError(400, "empty_transcript", "Transcript is empty. Nothing to summarize.")
+    total_chars = sum(len(u.text) for u in body.utterances)
+    if total_chars > 30000:
+        raise ProviderError(422, "too_long", "Transcript exceeds the maximum limit of 30,000 characters.")
+    _check_lang(body.output_language)
+    result = await summarize.summarize([u.model_dump() for u in body.utterances], body.output_language)
+    log.info("summarize utterances=%d chars=%d lang=%s", len(body.utterances), total_chars, body.output_language)
+    return result
 
 
 @app.websocket("/ws/{room_id}")

@@ -304,10 +304,10 @@ Add the actual contributors below before submitting or presenting the project.
 
 | Name | Role / Contribution |
 |---|---|
-| `[Team Member 1]` | `[e.g., Backend and API integration]` |
-| `[Team Member 2]` | `[e.g., Frontend and user interface]` |
-| `[Team Member 3]` | `[e.g., WebRTC and call flow]` |
-| `[Team Member 4]` | `[e.g., Testing, documentation, and demo]` |
+| `Shrey Mishra` | `Team Leader /Over All Management` |
+| `Yogesh Kumar Yadav` | ` Frontend and user interface` |
+| `Dagendra Kumar Sahu` | ` Backend, WebRTC and call flow` |
+| `Nomend Kumar Sahu` | `Resercher and demo` |
 
 *Replace the placeholders with the real names and contributions. Remove unused rows.*
 

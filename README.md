@@ -1,12 +1,18 @@
-# BhashaCall AI — Multilingual Voice Call 
+# BhashaCall AI
 
 > **A browser-based voice-call prototype that helps two people speaking different languages communicate through translated speech.** The initial language pair is Hindi and English.
 
-**Project status:** Prototype / not production-ready  
-**Current scope:** Two participants per room  
-**Frontend:** Plain HTML, CSS, and JavaScript (ES modules)  
-**Backend:** FastAPI (Python)
+**Project Status:** Functional Prototype — Under Active Development
 
+**Current Scope:** Real-time interaction between two participants per room, with a roadmap for multi-user support.
+
+**Frontend:** HTML5, CSS3, JavaScript ES Modules, responsive UI.
+
+**Backend:** FastAPI (Python), and WebSocket-based real-time communication.
+
+**Core Focus:** Real-time collaboration, user-friendly experience, and responsible AI usage.
+
+**Current Limitations:** Limited to two participants per room; authentication, scalability, error handling, and production deployment are under development.
 ---
 
 ## Table of Contents

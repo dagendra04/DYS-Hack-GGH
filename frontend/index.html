@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BhashaBridge AI — multilingual voice call prototype</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="brand"><span class="logo" aria-hidden="true">भा</span> BhashaBridge AI <span class="tag">Prototype</span></div>
+  <div id="modeBanner" class="mode" role="status"></div>
+</header>
+
+<main id="main">
+<section id="view-home" class="view">
+  <h1>Speak your language.<br>Be heard in theirs.</h1>
+  <p class="lead">A two-person browser voice call. Each side's speech is transcribed, translated and spoken aloud in the other person's language. Expect a few seconds of delay — this is a sequential speech → text → translation → speech pipeline, not instant interpretation.</p>
+  <p class="langs"><strong>Languages:</strong> <span id="langChips"></span></p>
+  <button class="btn primary big" id="startBtn">Start calling</button>
+  <div class="card notice">
+    <h2>Privacy notice</h2>
+    <p>This app uses your microphone. Depending on server settings, your speech and its text are sent to third-party AI services (e.g. Google Gemini, OpenAI) for transcription, translation and speech. In Chrome, browser speech recognition also sends audio to Google. The server does not store audio or transcripts. Calls are not guaranteed private beyond standard WebRTC transport encryption; translated text passes through this server.</p>
+  </div>
+</section>
+
+<section id="view-lobby" class="view" hidden>
+  <h1>Set up your call</h1>
+  <div class="card form">
+    <label for="name">Your name</label>
+    <input id="name" maxlength="24" placeholder="e.g. Krishna" autocomplete="nickname">
+    <div class="row2">
+      <div><label for="spoken">I speak</label><select id="spoken"></select></div>
+      <div><label for="output">I want to hear</label><select id="output"></select></div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="createBtn">Create call</button>
+    </div>
+    <hr>
+    <label for="roomInput">Or join with a room code</label>
+    <div class="join">
+      <input id="roomInput" maxlength="12" placeholder="ROOM CODE" autocapitalize="characters">
+      <button class="btn" id="joinBtn">Join call</button>
+    </div>
+    <p id="lobbyError" class="error" role="alert" hidden></p>
+  </div>
+  <p class="hint">Tip: use headphones if both people are in the same room, otherwise the speaker sound can leak into the microphone.</p>
+</section>
+
+<section id="view-call" class="view" hidden>
+  <div class="bar">
+    <div><span class="muted">Room</span> <strong id="roomCode" class="mono"></strong>
+      <button class="btn small" id="copyBtn">Copy invite link</button></div>
+    <div class="pills">
+      <span class="pill" id="connPill">Connecting…</span>
+      <span class="pill" id="timer" aria-label="Call duration">00:00</span>
+      <span class="pill state" id="pipePill" data-state="idle" role="status" aria-live="polite">Idle</span>
+    </div>
+  </div>
+  <p id="callError" class="error" role="alert" hidden></p>
+  <div class="grid">
+    <div class="col">
+      <div class="people">
+        <article class="card person" id="meCard"><h2>You</h2><p class="pname" id="meName"></p><p class="muted" id="meMic">Microphone: starting…</p>
+          <div class="meter" aria-hidden="true"><i id="meter"></i></div></article>
+        <article class="card person" id="peerCard"><h2>Participant</h2><p class="pname" id="peerName">Waiting for someone to join…</p><p class="muted" id="peerLang"></p></article>
+      </div>
+      <div class="card controls">
+        <div class="row2">
+          <div><label for="spoken2">I speak</label><select id="spoken2"></select></div>
+          <div><label for="output2">I want to hear</label><select id="output2"></select></div>
+        </div>
+        <label for="origVol">Original voice volume while translating (0 = hear only the translation)</label>
+        <input type="range" id="origVol" min="0" max="100" value="10">
+        <div class="actions">
+          <button class="btn" id="muteBtn" aria-pressed="false">Mute microphone</button>
+          <button class="btn danger" id="leaveBtn">Leave call</button>
+        </div>
+      </div>
+    </div>
+    <div class="card transcript-wrap">
+      <h2>Live transcript</h2>
+      <ol id="transcript" class="transcript" aria-live="polite"><li class="empty">Conversation will appear here once both people are connected.</li></ol>
+    </div>
+  </div>
+  <audio id="remoteAudio" autoplay playsinline></audio>
+  <audio id="ttsAudio" playsinline></audio>
+</section>
+</main>
+<div id="toast" class="toast" role="status" hidden></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

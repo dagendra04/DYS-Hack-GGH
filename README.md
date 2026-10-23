@@ -344,7 +344,6 @@ Record what the team actually built, tested, or demonstrated during the event. F
 - **FastAPI:** Python web framework for the backend and API endpoints.
 - **WebRTC:** Browser-to-browser real-time media communication.
 - **Web Speech API:** Browser-provided speech recognition and speech synthesis where supported.
-- **OpenAI, Mistral, and Google Cloud Translation:** Optional provider integrations, depending on configuration.
 - **Open-source Python packages:** See `requirements.txt` for dependencies and their licenses.
 
 Thanks to the event organizers, mentors, testers, and everyone who provided feedback. Add any required event-specific acknowledgements, datasets, assets, or third-party references here.

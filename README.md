@@ -307,7 +307,7 @@ Add the actual contributors below before submitting or presenting the project.
 | `Shrey Mishra` | `Team Leader /Over All Management` |
 | `Yogesh Kumar Yadav` | ` Frontend and user interface` |
 | `Dagendra Kumar Sahu` | ` Backend, WebRTC and call flow` |
-| `Nomend Kumar Sahu` | `Resercher and demo` |
+| `Nomend Kumar Sahu` | `Researcher and demo` |
 
 *Replace the placeholders with the real names and contributions. Remove unused rows.*
 

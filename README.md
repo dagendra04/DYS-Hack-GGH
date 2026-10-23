@@ -1,4 +1,4 @@
-# BhashaBridge AI — Multilingual Voice Call (Prototype)
+# BhashaCall AI — Multilingual Voice Call 
 
 > **A browser-based voice-call prototype that helps two people speaking different languages communicate through translated speech.** The initial language pair is Hindi and English.
 
